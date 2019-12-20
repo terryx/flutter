@@ -91,6 +91,7 @@ class _CupertinoPickerDemoState extends State<CupertinoPickerDemo> {
                 scrollController: scrollController,
                 itemExtent: _kPickerItemHeight,
                 backgroundColor: CupertinoColors.white,
+                decoration: BoxDecoration(),
                 onSelectedItemChanged: (int index) {
                   setState(() => _selectedColorIndex = index);
                 },

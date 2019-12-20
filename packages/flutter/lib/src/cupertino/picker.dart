@@ -17,6 +17,7 @@ const Color _kDefaultBackground = Color(0xFFD2D4DB);
 const double _kDefaultDiameterRatio = 1.07;
 const double _kDefaultPerspective = 0.003;
 const double _kSqueeze = 1.45;
+
 /// Opacity fraction value that hides the wheel above and below the 'magnifier'
 /// lens with the same color as the background.
 const double _kForegroundScreenOpacityFraction = 0.7;
@@ -62,6 +63,7 @@ class CupertinoPicker extends StatefulWidget {
     Key key,
     this.diameterRatio = _kDefaultDiameterRatio,
     this.backgroundColor = _kDefaultBackground,
+    this.decoration,
     this.offAxisFraction = 0.0,
     this.useMagnifier = false,
     this.magnification = 1.0,
@@ -71,18 +73,19 @@ class CupertinoPicker extends StatefulWidget {
     @required this.onSelectedItemChanged,
     @required List<Widget> children,
     bool looping = false,
-  }) : assert(children != null),
-       assert(diameterRatio != null),
-       assert(diameterRatio > 0.0, RenderListWheelViewport.diameterRatioZeroMessage),
-       assert(magnification > 0),
-       assert(itemExtent != null),
-       assert(itemExtent > 0),
-       assert(squeeze != null),
-       assert(squeeze > 0),
-       childDelegate = looping
-                       ? ListWheelChildLoopingListDelegate(children: children)
-                       : ListWheelChildListDelegate(children: children),
-       super(key: key);
+  })  : assert(children != null),
+        assert(diameterRatio != null),
+        assert(diameterRatio > 0.0,
+            RenderListWheelViewport.diameterRatioZeroMessage),
+        assert(magnification > 0),
+        assert(itemExtent != null),
+        assert(itemExtent > 0),
+        assert(squeeze != null),
+        assert(squeeze > 0),
+        childDelegate = looping
+            ? ListWheelChildLoopingListDelegate(children: children)
+            : ListWheelChildListDelegate(children: children),
+        super(key: key);
 
   /// Creates a picker from an [IndexedWidgetBuilder] callback where the builder
   /// is dynamically invoked during layout.
@@ -105,6 +108,7 @@ class CupertinoPicker extends StatefulWidget {
     Key key,
     this.diameterRatio = _kDefaultDiameterRatio,
     this.backgroundColor = _kDefaultBackground,
+    this.decoration,
     this.offAxisFraction = 0.0,
     this.useMagnifier = false,
     this.magnification = 1.0,
@@ -114,16 +118,18 @@ class CupertinoPicker extends StatefulWidget {
     @required this.onSelectedItemChanged,
     @required IndexedWidgetBuilder itemBuilder,
     int childCount,
-  }) : assert(itemBuilder != null),
-       assert(diameterRatio != null),
-       assert(diameterRatio > 0.0, RenderListWheelViewport.diameterRatioZeroMessage),
-       assert(magnification > 0),
-       assert(itemExtent != null),
-       assert(itemExtent > 0),
-       assert(squeeze != null),
-       assert(squeeze > 0),
-       childDelegate = ListWheelChildBuilderDelegate(builder: itemBuilder, childCount: childCount),
-       super(key: key);
+  })  : assert(itemBuilder != null),
+        assert(diameterRatio != null),
+        assert(diameterRatio > 0.0,
+            RenderListWheelViewport.diameterRatioZeroMessage),
+        assert(magnification > 0),
+        assert(itemExtent != null),
+        assert(itemExtent > 0),
+        assert(squeeze != null),
+        assert(squeeze > 0),
+        childDelegate = ListWheelChildBuilderDelegate(
+            builder: itemBuilder, childCount: childCount),
+        super(key: key);
 
   /// Relative ratio between this picker's height and the simulated cylinder's diameter.
   ///
@@ -133,6 +139,9 @@ class CupertinoPicker extends StatefulWidget {
   ///
   /// Must not be null and defaults to `1.1` to visually mimic iOS.
   final double diameterRatio;
+
+  /// [BoxDecoration] for magnifier so that color and border can be customized
+  final BoxDecoration decoration;
 
   /// Background color behind the children.
   ///
@@ -202,7 +211,8 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
   void didUpdateWidget(CupertinoPicker oldWidget) {
     if (widget.scrollController != null && oldWidget.scrollController == null) {
       _controller = null;
-    } else if (widget.scrollController == null && oldWidget.scrollController != null) {
+    } else if (widget.scrollController == null &&
+        oldWidget.scrollController != null) {
       assert(_controller == null);
       _controller = FixedExtentScrollController();
     }
@@ -248,7 +258,8 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
     if (widget.backgroundColor != null && widget.backgroundColor.alpha < 255)
       return Container();
 
-    final Color widgetBackgroundColor = widget.backgroundColor ?? const Color(0xFFFFFFFF);
+    final Color widgetBackgroundColor =
+        widget.backgroundColor ?? const Color(0xFFFFFFFF);
     return Positioned.fill(
       child: IgnorePointer(
         child: Container(
@@ -265,7 +276,14 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
                 widgetBackgroundColor,
               ],
               stops: const <double>[
-                0.0, 0.05, 0.09, 0.22, 0.78, 0.91, 0.95, 1.0,
+                0.0,
+                0.05,
+                0.09,
+                0.22,
+                0.78,
+                0.91,
+                0.95,
+                1.0,
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -280,7 +298,14 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
   /// the lens and partially grayed out around it.
   Widget _buildMagnifierScreen() {
     final Color foreground = widget.backgroundColor?.withAlpha(
-      (widget.backgroundColor.alpha * _kForegroundScreenOpacityFraction).toInt()
+        (widget.backgroundColor.alpha * _kForegroundScreenOpacityFraction)
+            .toInt());
+
+    const BoxDecoration decoration = BoxDecoration(
+      border: Border(
+        top: BorderSide(width: 0.0, color: _kHighlighterBorder),
+        bottom: BorderSide(width: 0.0, color: _kHighlighterBorder),
+      ),
     );
 
     return IgnorePointer(
@@ -292,14 +317,9 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
             ),
           ),
           Container(
-            decoration: const BoxDecoration(
-              border: Border(
-                top: BorderSide(width: 0.0, color: _kHighlighterBorder),
-                bottom: BorderSide(width: 0.0, color: _kHighlighterBorder),
-              ),
-            ),
+            decoration: widget.decoration ?? decoration,
             constraints: BoxConstraints.expand(
-                height: widget.itemExtent * widget.magnification,
+              height: widget.itemExtent * widget.magnification,
             ),
           ),
           Expanded(
@@ -314,8 +334,8 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
 
   Widget _buildUnderMagnifierScreen() {
     final Color foreground = widget.backgroundColor?.withAlpha(
-        (widget.backgroundColor.alpha * _kForegroundScreenOpacityFraction).toInt()
-    );
+        (widget.backgroundColor.alpha * _kForegroundScreenOpacityFraction)
+            .toInt());
 
     return Column(
       children: <Widget>[
@@ -373,7 +393,7 @@ class _CupertinoPickerState extends State<CupertinoPicker> {
     // color is transparent.
     if (widget.backgroundColor != null && widget.backgroundColor.alpha < 255) {
       result = Stack(
-        children: <Widget> [
+        children: <Widget>[
           _buildUnderMagnifierScreen(),
           _addBackgroundToChild(result),
         ],
@@ -401,10 +421,13 @@ class _CupertinoPickerSemantics extends SingleChildRenderObjectWidget {
   final FixedExtentScrollController scrollController;
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderCupertinoPickerSemantics(scrollController, Directionality.of(context));
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderCupertinoPickerSemantics(
+          scrollController, Directionality.of(context));
 
   @override
-  void updateRenderObject(BuildContext context, covariant _RenderCupertinoPickerSemantics renderObject) {
+  void updateRenderObject(BuildContext context,
+      covariant _RenderCupertinoPickerSemantics renderObject) {
     renderObject
       ..textDirection = Directionality.of(context)
       ..controller = scrollController;
@@ -412,15 +435,16 @@ class _CupertinoPickerSemantics extends SingleChildRenderObjectWidget {
 }
 
 class _RenderCupertinoPickerSemantics extends RenderProxyBox {
-  _RenderCupertinoPickerSemantics(FixedExtentScrollController controller, this._textDirection) {
+  _RenderCupertinoPickerSemantics(
+      FixedExtentScrollController controller, this._textDirection) {
     this.controller = controller;
   }
 
   FixedExtentScrollController get controller => _controller;
   FixedExtentScrollController _controller;
+
   set controller(FixedExtentScrollController value) {
-    if (value == _controller)
-      return;
+    if (value == _controller) return;
     if (_controller != null)
       _controller.removeListener(_handleScrollUpdate);
     else
@@ -431,9 +455,9 @@ class _RenderCupertinoPickerSemantics extends RenderProxyBox {
 
   TextDirection get textDirection => _textDirection;
   TextDirection _textDirection;
+
   set textDirection(TextDirection value) {
-    if (textDirection == value)
-      return;
+    if (textDirection == value) return;
     _textDirection = value;
     markNeedsSemanticsUpdate();
   }
@@ -445,17 +469,16 @@ class _RenderCupertinoPickerSemantics extends RenderProxyBox {
   }
 
   void _handleDecrease() {
-    if (_currentIndex == 0)
-      return;
+    if (_currentIndex == 0) return;
     controller.jumpToItem(_currentIndex - 1);
   }
 
   void _handleScrollUpdate() {
-    if (controller.selectedItem == _currentIndex)
-      return;
+    if (controller.selectedItem == _currentIndex) return;
     _currentIndex = controller.selectedItem;
     markNeedsSemanticsUpdate();
   }
+
   @override
   void describeSemanticsConfiguration(SemanticsConfiguration config) {
     super.describeSemanticsConfiguration(config);
@@ -464,7 +487,8 @@ class _RenderCupertinoPickerSemantics extends RenderProxyBox {
   }
 
   @override
-  void assembleSemanticsNode(SemanticsNode node, SemanticsConfiguration config, Iterable<SemanticsNode> children) {
+  void assembleSemanticsNode(SemanticsNode node, SemanticsConfiguration config,
+      Iterable<SemanticsNode> children) {
     if (children.isEmpty)
       return super.assembleSemanticsNode(node, config, children);
     final SemanticsNode scrollable = children.first;
